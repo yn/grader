@@ -1,9 +1,10 @@
-#lang racket/gui
+#lang racket
 (compile-enforce-module-constants #f)
 (require ffi/unsafe
          ffi/unsafe/objc         
          ffi/unsafe/nsstring
          ffi/unsafe/nsalloc
+         ;;(except-in racket/gui ->)
          2htdp/batch-io)
 
 ;;; Types
@@ -55,9 +56,10 @@
      (tellv menu addItem: menu-item)
      (tellv status-item setMenu: menu)
      (set-ivar! holder status-item status-item)
-     (set-ivar! holder timer (new timer% 
-                                  [notify-callback (lambda () (void))]
-                                  [interval 1000]))
+     ;; (set-ivar! holder timer (new timer% 
+     ;;                              [notify-callback (lambda () (void))]
+     ;;                              [interval 1000]))
+     (set-ivar! holder timer #f)
      
      
      )
@@ -81,4 +83,3 @@
 (go)
 
 (define (q) (print "bye1"))
-(compile-enforce-module-constants #f)
