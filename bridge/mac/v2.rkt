@@ -32,11 +32,9 @@
 
 (unless (objc_lookUpClass "Holder")
   (define-objc-class Holder NSObject
-    [timer status-item]
+    [timer status-item q]
     (- _void (quit: [_id sender])
-       (when timer (send timer stop))
-       (let* ([statusbar (tell NSStatusBar systemStatusBar)])
-         (tellv statusbar removeStatusItem: status-item))
+       (q)
        (tellv self release))))
 (import-class Holder)
 
@@ -93,19 +91,23 @@
 
 (define (go)  
  (with-autorelease
-   (let* ([statusbar (tell NSStatusBar systemStatusBar)]
-          [status-item (tell statusbar statusItemWithLength: #:type _CGFloat -1.0)]
-          [menu (tell NSMenu new)]
-          [menu-item (ns-menu-item "Quit" (selector quit:) "")]
-          [holder (tell Holder new)])
+   (let*
+       ([statusbar (tell NSStatusBar systemStatusBar)]
+        [status-item (tell statusbar statusItemWithLength: #:type _CGFloat -1.0)]
+        [menu (tell NSMenu new)]
+        [menu-item (ns-menu-item "Quit" (selector quit:) "")]
+        [holder (tell Holder new)]
+        [timer (new timer% 
+                    [notify-callback (partial tick status-item)]
+                    [interval 5000])])
      (set! global-status-item (tell status-item retain))
      (tellv status-item setAttributedTitle: (get-attributed-string "I"))
      (tellv status-item setHighlightMode: #:type _int 1)
      (tellv menu-item setTarget: holder)
      (tellv menu addItem: menu-item)
      (tellv status-item setMenu: menu)
-     (set-ivar! holder status-item status-item)
-     (set-ivar! holder timer (new timer% 
-                                  [notify-callback (partial tick status-item)]
-                                  [interval 5000])))))
+     (set-ivar! holder q
+                (lambda ()
+                  (when timer (send timer stop))
+                  (when status-item (tellv statusbar removeStatusItem: status-item)))))))
 ;;(go)
