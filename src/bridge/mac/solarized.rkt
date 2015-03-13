@@ -1,9 +1,5 @@
 #lang racket
 
-(ffi-lib "/System/Library/Frameworks/Foundation.framework/Foundation")
-(ffi-lib "/System/Library/Frameworks/AppKit.framework/AppKit")
-
-
 (require (except-in ffi/unsafe ->)
          ffi/unsafe/objc         
          ffi/unsafe/nsstring
