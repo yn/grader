@@ -20,7 +20,7 @@
 ;;; Constants
 (define NSVariableStatusItemLength -1) 
 
-;;; Classes
+;;; ObjC utilities
 (import-class NSObject)
 (import-class NSStatusBar)
 (import-class NSStatusItem)
@@ -30,24 +30,42 @@
 (import-class NSMutableDictionary)
 (import-class NSAttributedString)
 
-(define (quit handler timer status-item)
-  (when timer (send timer stop))
-  (when status-item
-    (let* ([statusbar (tell NSStatusBar systemStatusBar)])
-      (tell statusbar removeStatusItem: status-item)))
-  (void))
-
 (unless (objc_lookUpClass "Holder")
   (define-objc-class Holder NSObject
     [timer status-item]
     (- _void (quit: [_id sender])
-       (quit self timer status-item)
-       (tell self release))
-    (- _void (dealloc)
-       (void)
-       ;;(write-file "/tmp/yourmom.txt" "Hi")
-       )))
+       (when timer (send timer stop))
+       (let* ([statusbar (tell NSStatusBar systemStatusBar)])
+         (tellv statusbar removeStatusItem: status-item))
+       (tellv self release))))
 (import-class Holder)
+
+(define (ns-font name size)
+  (tell NSFont
+        fontWithName: #:type _NSString
+        name size: #:type _double (* 1.0 size)))
+
+(define (hash->ns-dictionary h)
+  (let ([d (tell NSMutableDictionary new)]
+        [for-each-kv (curry hash-for-each h)])
+    (for-each-kv 
+     (lambda [k v]
+       (tell d
+             setObject: v
+             forKey: #:type _NSString k)))
+    d))
+
+(define (ns-attributed-string s a)
+  (tell (tell NSAttributedString alloc)
+        initWithString: #:type _NSString s
+        attributes: a))
+
+(define (ns-menu-item t s k)
+  (tell (tell NSMenuItem alloc)
+        initWithTitle: #:type _NSString t
+        action: #:type _SEL s
+        keyEquivalent: #:type _NSString k))
+
 
 (define global-status-item #f)
 (define grade-file "/Users/yn/code/mine/grader/grade")
@@ -59,39 +77,29 @@
                                          (cons "D" s:red)
                                          (cons "F" s:red))))
 
-(define (ns-font name size)
-  (tell NSFont fontWithName: #:type _NSString name size: #:type _double (* 1.0 size)))
-
-(define (set-attribute! a k v)
-  (tell a setObject: v forKey: #:type _NSString k))
-
-(define (ns-attributed-string s a)
-  (tell (tell NSAttributedString alloc) initWithString: #:type _NSString s attributes: a))
 
 (define (get-attributed-string grade [mtime #f])
-  (let* ([attributes (tell NSMutableDictionary new)]
+  (let* ([h (make-hash)]
          [major-grade (substring grade 0 1)])
-    (set-attribute! attributes "NSFont" (ns-font "Monaco" 14))
-    (set-attribute! attributes "NSBackgroundColor" s:base01)
+    (hash-set! h "NSFont" (ns-font "Monaco" 14))
+    (hash-set! h "NSBackgroundColor" s:base01)
     (when (hash-has-key? grade->color-mapping major-grade)
-      (set-attribute! attributes "NSColor" (hash-ref grade->color-mapping major-grade)))
-    (ns-attributed-string grade attributes)
-    ))
+      (hash-set! h "NSColor" (hash-ref grade->color-mapping major-grade)))
+    (ns-attributed-string grade (hash->ns-dictionary h)))) 
 
 (define (tick status-item)
   (with-handlers ([exn:fail? (λ (e) (tellv status-item setAttributedTitle: (get-attributed-string "IOE")))])
-    (tellv status-item setAttributedTitle: (get-attributed-string (read-file "/tmp")))))
+    (tellv status-item setAttributedTitle: (get-attributed-string (read-file grade-file)))))
 
 (define (go)  
  (with-autorelease
    (let* ([statusbar (tell NSStatusBar systemStatusBar)]
           [status-item (tell statusbar statusItemWithLength: #:type _CGFloat -1.0)]
           [menu (tell NSMenu new)]
-          [menu-item (tell (tell NSMenuItem alloc) initWithTitle: #:type _NSString "Quit" action: #:type _SEL (selector quit:) keyEquivalent: #:type _NSString "")]
+          [menu-item (ns-menu-item "Quit" (selector quit:) "")]
           [holder (tell Holder new)])
      (set! global-status-item (tell status-item retain))
      (tellv status-item setAttributedTitle: (get-attributed-string "I"))
-     ;;(tellv status-item setAttributedTitle: #:type _NSString "Hi")
      (tellv status-item setHighlightMode: #:type _int 1)
      (tellv menu-item setTarget: holder)
      (tellv menu addItem: menu-item)
@@ -99,25 +107,5 @@
      (set-ivar! holder status-item status-item)
      (set-ivar! holder timer (new timer% 
                                   [notify-callback (partial tick status-item)]
-                                  [interval 5000]))
-     
-     
-     )
-  
-   ;; (set! menu       (menu:init-with-title "Screenshot"))
- 
-   ;; (set! menu-item1 (menu-item:init-with-title "capture1"))
-   ;; (menu-item:set-enabled menu-item1 #t)
-   ;; (menu:add-item menu menu-item1)
-
-   ;; (set! menu-item2 (menu-item:init-with-title "capture2"))
-   ;; (menu-item:set-enabled menu-item2 #t)
-   ;; (menu:add-item menu menu-item2)
- 
-   ;; (status-item:set-menu status-item menu)
-   ;; ; (menu:set-menu-bar-visible menu #t)
- 
-   ;; (status-item:set-enabled status-item #t)
-
-   ))                                   ; respond to clicks
+                                  [interval 5000])))))
 ;;(go)
