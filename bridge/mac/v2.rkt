@@ -5,6 +5,7 @@
          ffi/unsafe/nsalloc
          (except-in racket/gui ->)
          2htdp/batch-io
+         rackjure/utils
          (prefix-in s:"solarized.rkt") )
 
 (ffi-lib
@@ -48,7 +49,8 @@
        )))
 (import-class Holder)
 
-(define status-item #f)
+(define global-status-item #f)
+(define grade-file "/Users/yn/code/mine/grader/grade")
 
 (define grade->color-mapping (make-hash (list
                                          (cons "A" s:green)
@@ -76,6 +78,10 @@
     (ns-attributed-string grade attributes)
     ))
 
+(define (tick status-item)
+  (with-handlers ([exn:fail? (λ (e) (tellv status-item setAttributedTitle: (get-attributed-string "IOE")))])
+    (tellv status-item setAttributedTitle: (get-attributed-string (read-file "/tmp")))))
+
 (define (go)  
  (with-autorelease
    (let* ([statusbar (tell NSStatusBar systemStatusBar)]
@@ -83,18 +89,17 @@
           [menu (tell NSMenu new)]
           [menu-item (tell (tell NSMenuItem alloc) initWithTitle: #:type _NSString "Quit" action: #:type _SEL (selector quit:) keyEquivalent: #:type _NSString "")]
           [holder (tell Holder new)])
-     (set! status-item (tell status-item retain))
-     (tellv status-item setAttributedTitle: (get-attributed-string "A-"))
+     (set! global-status-item (tell status-item retain))
+     (tellv status-item setAttributedTitle: (get-attributed-string "I"))
      ;;(tellv status-item setAttributedTitle: #:type _NSString "Hi")
      (tellv status-item setHighlightMode: #:type _int 1)
      (tellv menu-item setTarget: holder)
      (tellv menu addItem: menu-item)
      (tellv status-item setMenu: menu)
      (set-ivar! holder status-item status-item)
-     ;; (set-ivar! holder timer (new timer% 
-     ;;                              [notify-callback (lambda () (void))]
-     ;;                              [interval 1000]))
-     (set-ivar! holder timer #f)
+     (set-ivar! holder timer (new timer% 
+                                  [notify-callback (partial tick status-item)]
+                                  [interval 5000]))
      
      
      )
