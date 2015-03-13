@@ -1,3 +1,3 @@
 #lang racket
-(define (fn1)
-  (print "Hello World1"))
+(define a 1)
+(require racket/gui)
