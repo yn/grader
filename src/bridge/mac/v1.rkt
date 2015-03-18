@@ -64,11 +64,11 @@
         keyEquivalent: #:type _NSString k))
 
 (define grade->color-mapping (make-hash (list
-                                         (cons "A" sl:green)
-                                         (cons "B" sl:cyan)
+                                         (cons "A" sl:cyan)
+                                         (cons "B" sl:green)
                                          (cons "C" sl:orange)
                                          (cons "D" sl:red)
-                                         (cons "F" sl:red))))
+                                         (cons "F" sl:magenta))))
 
 (define (more-than-1-day-ago? seconds)
   (let* ([arg (s:make-time s:time-utc 0 seconds)]
@@ -82,8 +82,9 @@
   (let* ([h (make-hash)]
          [major-grade (substring grade 0 1)])
     (hash-set! h "NSFont" (ns-font "Monaco" 14))
-    (when (and mtime (more-than-1-day-ago? mtime))
-     (hash-set! h "NSBackgroundColor" sl:base01))
+    (if (and mtime (more-than-1-day-ago? mtime))
+        (hash-set! h "NSBackgroundColor" sl:base01)
+        (hash-set! h "NSBackgroundColor" sl:base2))
     (when (hash-has-key? grade->color-mapping major-grade)
       (hash-set! h "NSColor" (hash-ref grade->color-mapping major-grade)))
     (ns-attributed-string grade (hash->ns-dictionary h))))
