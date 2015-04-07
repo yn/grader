@@ -18,8 +18,8 @@
 (unless (input-grade7-file) (input-grade7-file c:grade7-file))
 (unless (input-grade28-file) (input-grade28-file c:grade28-file))
 
-(v1:go (input-grade7-file))
-(v1:go (input-grade28-file))
+(v1:go (input-grade7-file) "7")
+(v1:go (input-grade28-file) "28")
 
 (module+ test
   ;(require rackunit)

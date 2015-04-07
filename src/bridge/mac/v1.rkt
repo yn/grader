@@ -99,7 +99,7 @@
                                       string->path
                                       file-or-directory-modify-seconds)))))
 
-(define (go input-grade-file)  
+(define (go input-grade-file interval)  
  (with-autorelease
    (let*
        ([statusbar (tell NSStatusBar systemStatusBar)]
@@ -113,6 +113,7 @@
      (send timer notify)
      (tellv status-item setHighlightMode: #:type _int 1)
      (tellv menu-item setTarget: holder)
+     (tellv menu addItem: (ns-menu-item interval #f ""))
      (tellv menu addItem: menu-item)
      (tellv status-item setMenu: menu)
      (set-ivar! holder q
